@@ -1,1 +1,0 @@
-Archivo readme del proyecto
