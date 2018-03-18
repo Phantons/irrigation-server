@@ -5,14 +5,14 @@ import java.net.Socket;
 public class Thread_Recepcion_Controlador extends Thread{
 	public void run(){
 		ServerSocket socket = null;
-		Socket socketSubUsuario = null;
+		Socket socketControlador = null;
 		while(true){
 			try{
-				socket = new ServerSocket(3520);
+				socket = new ServerSocket(4320);
 				while(true){
-					socketSubUsuario = null;
-					socketSubUsuario = socket.accept();
-					new Thread_Atencion_Controlador(socketSubUsuario).start();
+					socketControlador = null;
+					socketControlador = socket.accept();
+					new Thread_Atencion_Controlador(socketControlador).start();
 				}
 			}catch(Exception e){}
 			finally{
@@ -21,7 +21,7 @@ public class Thread_Recepcion_Controlador extends Thread{
 						socket.close();
 					}catch(Exception e2){}
 				}
-				socketSubUsuario = null;
+				socketControlador = null;
 				socket = null;
 			}
 		}
