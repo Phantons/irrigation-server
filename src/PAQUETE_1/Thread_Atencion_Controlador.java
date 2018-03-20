@@ -10,18 +10,18 @@ public class Thread_Atencion_Controlador extends Thread_TCP_Cifrado{
 		try{
 			if(this.inicializacionCifrado() == true){
 				String mensajeRecibido = this.leerTexto();
-				if(mensajeRecibido.substring(0, 7).equals("/ActMd/")){
+				if(mensajeRecibido.substring(0, 7).equals("/AskCo/")){
 					String id = mensajeRecibido.substring(7, mensajeRecibido.length() - 1);
-					Usuario_Concreto_General usuarioActual = null;
+					Controlador controller = null;
 					ArrayList<Usuario_Concreto_General> usuariosExistentes = Usuarios_Totales.getUsuariosExistentes();
 					for(int j1 = 0; j1 < usuariosExistentes.size(); j1 = j1 + 1){
-						if(usuariosExistentes.get(j1).getIdRaspberry().equals(id)){
-							usuarioActual = usuariosExistentes.get(j1);
+						if(usuariosExistentes.get(j1).getControladorPorId(id) != null){
+							controller = usuariosExistentes.get(j1).getControladorPorId(id);
 							break;
 						}
 					}
-					if(usuarioActual != null){
-						this.enviarTexto(usuarioActual.getModoActivo());
+					if(controller != null){
+						this.enviarTexto(controller.getObjetoSerializado());
 					}
 					else{
 						this.enviarTexto("IdFalso");
@@ -29,16 +29,16 @@ public class Thread_Atencion_Controlador extends Thread_TCP_Cifrado{
 				}
 				else if(mensajeRecibido.substring(0, 7).equals("/ShReg/")){
 					String id = mensajeRecibido.substring(7, mensajeRecibido.length() - 1);
-					Usuario_Concreto_General usuarioActual = null;
 					ArrayList<Usuario_Concreto_General> usuariosExistentes = Usuarios_Totales.getUsuariosExistentes();
+					Controlador controller = null;
 					for(int j1 = 0; j1 < usuariosExistentes.size(); j1 = j1 + 1){
-						if(usuariosExistentes.get(j1).getIdRaspberry().equals(id)){
-							usuarioActual = usuariosExistentes.get(j1);
+						if(usuariosExistentes.get(j1).getControladorPorId(id) != null){
+							controller = usuariosExistentes.get(j1).getControladorPorId(id);
 							break;
 						}
 					}
-					if(usuarioActual != null){
-						Integer[] riego = usuarioActual.getInicioManual();
+					if(controller != null){
+						Integer[] riego = controller.getRegarAhora();
 						String respuesta = "/";
 						for(int j1 = 0; j1 < riego.length; j1 = j1 + 1){
 							if(riego[j1] != null){
@@ -57,15 +57,15 @@ public class Thread_Atencion_Controlador extends Thread_TCP_Cifrado{
 				else if(mensajeRecibido.substring(0, 7).equals("/InfRg/")){
 					String[] separados = mensajeRecibido.substring(7, mensajeRecibido.length() - 1).split("/");
 					String id = separados[0];
-					Usuario_Concreto_General usuarioActual = null;
+					Controlador controller = null;
 					ArrayList<Usuario_Concreto_General> usuariosExistentes = Usuarios_Totales.getUsuariosExistentes();
 					for(int j1 = 0; j1 < usuariosExistentes.size(); j1 = j1 + 1){
-						if(usuariosExistentes.get(j1).getIdRaspberry().equals(id)){
-							usuarioActual = usuariosExistentes.get(j1);
+						if(usuariosExistentes.get(j1).getControladorPorId(id) != null){
+							controller = usuariosExistentes.get(j1).getControladorPorId(id);
 							break;
 						}
 					}
-					if(usuarioActual != null){
+					if(controller != null){
 						Boolean[] estado = new Boolean[32];
 						for(int j1 = 0; j1 < 32; j1 = j1 + 1){
 							if(separados[j1 + 1].equals("null") == false){
@@ -75,7 +75,7 @@ public class Thread_Atencion_Controlador extends Thread_TCP_Cifrado{
 								estado[j1] = null;
 							}
 						}
-						usuarioActual.setEstadoElectrovalvulas(estado);
+						controller.setEstado(estado);
 					}
 				}
 			}

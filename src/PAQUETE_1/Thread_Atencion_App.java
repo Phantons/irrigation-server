@@ -43,23 +43,17 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 					String[] credencialesSeparadas = mensajeRecibido.substring(7, mensajeRecibido.length() - 1).split("/");
 					String nombreDeUsuario = credencialesSeparadas[0];
 					String contrasena = credencialesSeparadas[1];
-					String idRaspi = credencialesSeparadas[2];
 					ArrayList<Usuario_Concreto_General> usuariosExistentes = Usuarios_Totales.getUsuariosExistentes();
-					boolean idRaspiLibre = true;
 					boolean nombreUsuarioLibre = true;
 					for(int j1 = 0; j1 < usuariosExistentes.size(); j1 = j1 + 1){
-						if(usuariosExistentes.get(j1).getIdRaspberry().equals(idRaspi)){
-							idRaspiLibre = false;
-							break;
-						}
 						if(usuariosExistentes.get(j1).getNombreUsuario().equals(nombreDeUsuario)){
 							nombreUsuarioLibre = false;
 							break;
 						}
 					}
-					if((idRaspiLibre == true) && (nombreUsuarioLibre == true)){
+					if(nombreUsuarioLibre == true){
 						if((MetodosAuxiliares.nombreUsuarioPasswordFactible(nombreDeUsuario)) && (MetodosAuxiliares.nombreUsuarioPasswordFactible(contrasena))){
-							Usuarios_Totales.anadirUsuario(new Usuario_Concreto_General(nombreDeUsuario, contrasena, idRaspi));
+							Usuarios_Totales.anadirUsuario(new Usuario_Concreto_General(nombreDeUsuario, contrasena));
 							this.enviarTexto("/CreadoOk/");
 						}
 						else{
@@ -73,6 +67,7 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 				else if(mensajeRecibido.substring(0, 7).equals("/GetRe/")){
 					if(mensajeRecibido.length() == 48){
 						String token = mensajeRecibido.substring(7, 47);
+						String idControlador = mensajeRecibido.substring(48, mensajeRecibido.length() - 1);
 						String nombreDeUsuario = null;
 						ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
 						for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
@@ -86,7 +81,7 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 							ArrayList<Usuario_Concreto_General> usuariosTotales = Usuarios_Totales.getUsuariosExistentes();
 							for(int j1 = 0; j1 < usuariosTotales.size(); j1 = j1 + 1){
 								if(usuariosTotales.get(j1).getNombreUsuario().equals(nombreDeUsuario)){
-									estadoRiego = usuariosTotales.get(j1).getEstadoElectrovalvulas();
+									estadoRiego = usuariosTotales.get(j1).getControladorPorId(idControlador).getEstadoRiego();
 									break;
 								}
 							}
@@ -111,6 +106,7 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 					String token = credencialesSeparadas[0];
 					int numeroValvula = Integer.parseInt(credencialesSeparadas[1]);
 					int tiempo = Integer.parseInt(credencialesSeparadas[2]);
+					String idControlador = credencialesSeparadas[3];
 					String nombreDeUsuario = null;
 					ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
 					for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
@@ -127,11 +123,8 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 								usuarioActual = usuariosTotales.get(j1);
 							}
 						}
-						Boolean[] arrayEstado = usuarioActual.getEstadoElectrovalvulas();
-						if(arrayEstado[numeroValvula] != null){
-							Integer[] arrayRegar = usuarioActual.getInicioManual();
-							arrayRegar[numeroValvula] = tiempo;
-							usuarioActual.setInicioManual(arrayRegar);
+						boolean todoBien = usuarioActual.getControladorPorId(idControlador).regarConcreto(numeroValvula, tiempo);
+						if(todoBien == true){
 							this.enviarTexto("/True/");
 						}
 						else{
@@ -142,10 +135,11 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 						this.enviarTexto("/TokenMal/");
 					}
 				}
-				else if(mensajeRecibido.substring(0, 7).equals("/MActv/")){
+				else if(mensajeRecibido.substring(0, 7).equals("/UpCon/")){
 					String[] credencialesSeparadas = mensajeRecibido.substring(7, mensajeRecibido.length() - 1).split("/");
 					String token = credencialesSeparadas[0];
-					String modoActivo = credencialesSeparadas[1];
+					String nuevoControlador = credencialesSeparadas[1];
+					String idControlador = credencialesSeparadas[2];
 					String nombreDeUsuario = null;
 					ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
 					for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
@@ -162,16 +156,22 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 								usuarioActual = usuariosTotales.get(j1);
 							}
 						}
-						usuarioActual.setModoActivo(modoActivo);
+						Controlador controller = usuarioActual.getControladorPorId(idControlador);
+						if(controller != null){
+							controller.setObjetoSerializado(nuevoControlador);
+						}
+						else{
+							//TODO: Revisar que el ID no este cojido
+							usuarioActual.anadirControlador(new Controlador(idControlador, nuevoControlador));
+						}
 						this.enviarTexto("/Correcto/");
 					}
 					else{
 						this.enviarTexto("/TokenMal/");
 					}
 				}
-				else if(mensajeRecibido.substring(0, 7).equals("/MInac/")){
-					String[] credencialesSeparadas = mensajeRecibido.substring(7, mensajeRecibido.length() - 1).split("/");
-					String token = credencialesSeparadas[0];
+				else if(mensajeRecibido.substring(0, 7).equals("/AllCo/")){
+					String token = mensajeRecibido.substring(7, mensajeRecibido.length() - 1);
 					String nombreDeUsuario = null;
 					ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
 					for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
@@ -188,77 +188,15 @@ public class Thread_Atencion_App extends Thread_TCP_Cifrado{
 								usuarioActual = usuariosTotales.get(j1);
 							}
 						}
-						ArrayList<String> modos = new ArrayList<String>();
-						for(int j1 = 1; j1 < credencialesSeparadas.length; j1 = j1 + 1){
-							modos.add(credencialesSeparadas[j1]);
+						ArrayList<String> pene = usuarioActual.getControladoresSerializados();
+						String respuesta = "/AnswerCo/";
+						for(int j1 = 0; j1 < pene.size(); j1 = j1 + 1){
+							respuesta = respuesta + pene.get(j1) + "/";
 						}
-						usuarioActual.setModosInactivos(modos);
-						this.enviarTexto("/Correcto/");
+						this.enviarTexto(respuesta);
 					}
 					else{
 						this.enviarTexto("/TokenMal/");
-					}
-				}
-				else if(mensajeRecibido.substring(0, 7).equals("/CnAct/")){
-					if(mensajeRecibido.length() == 48){
-						String token = mensajeRecibido.substring(7, 47);
-						String nombreDeUsuario = null;
-						ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
-						for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
-							if(usuariosActivos.get(j1).getToken().equals(token)){
-								nombreDeUsuario = usuariosActivos.get(j1).getNombreUsuario();
-								break;
-							}
-						}
-						if(nombreDeUsuario != null){
-							Usuario_Concreto_General usuarioActual = null;
-							ArrayList<Usuario_Concreto_General> usuariosTotales = Usuarios_Totales.getUsuariosExistentes();
-							for(int j1 = 0; j1 < usuariosTotales.size(); j1 = j1 + 1){
-								if(usuariosTotales.get(j1).getNombreUsuario().equals(nombreDeUsuario)){
-									usuarioActual = usuariosTotales.get(j1);
-								}
-							}
-							if(usuarioActual.getModoActivo() != null){
-								this.enviarTexto("/AnswerAc/" + usuarioActual.getModoActivo() + "/");
-							}
-							else{
-								this.enviarTexto("/AnswerAc/null/");
-							}
-						}
-						else{
-							this.enviarTexto("/TokenMal/");
-						}
-					}
-				}
-				else if(mensajeRecibido.substring(0, 7).equals("/CnIna/")){
-					if(mensajeRecibido.length() == 48){
-						String token = mensajeRecibido.substring(7, 47);
-						String nombreDeUsuario = null;
-						ArrayList<Usuario_Concreto_Activo> usuariosActivos = Usuarios_Totales_Activos.getUsuariosActivos();
-						for(int j1 = 0; j1 < usuariosActivos.size(); j1 = j1 + 1){
-							if(usuariosActivos.get(j1).getToken().equals(token)){
-								nombreDeUsuario = usuariosActivos.get(j1).getNombreUsuario();
-								break;
-							}
-						}
-						if(nombreDeUsuario != null){
-							Usuario_Concreto_General usuarioActual = null;
-							ArrayList<Usuario_Concreto_General> usuariosTotales = Usuarios_Totales.getUsuariosExistentes();
-							for(int j1 = 0; j1 < usuariosTotales.size(); j1 = j1 + 1){
-								if(usuariosTotales.get(j1).getNombreUsuario().equals(nombreDeUsuario)){
-									usuarioActual = usuariosTotales.get(j1);
-								}
-							}
-							ArrayList<String> modos = usuarioActual.getModosInactivos();
-							String respuesta = "/AnswerIn/";
-							for(int j1 = 0; j1 < modos.size(); j1 = j1 + 1){
-								respuesta = respuesta + modos.get(j1) + "/";
-							}
-							this.enviarTexto(respuesta);
-						}
-						else{
-							this.enviarTexto("/TokenMal/");
-						}
 					}
 				}
 			}

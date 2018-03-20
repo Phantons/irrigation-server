@@ -4,30 +4,15 @@ import java.util.ArrayList;
 public class Usuario_Concreto_General {
 	private String nombreUsuario;
 	private String contrasena;
-	private String idRaspberry;
-	private String modoActivo;
-	private ArrayList<String> modosInactivos;
-	private Boolean[] estadoElectrovalvulas;
-	private Integer[] inicioRiegoManual;
+	private ArrayList<Controlador> controladores;
 	
-	public Usuario_Concreto_General(String nombreDeUsuario, String contrasena, String idRaspi){
+	public Usuario_Concreto_General(String nombreDeUsuario, String contrasena){
 		this.nombreUsuario = nombreDeUsuario;
 		this.contrasena = contrasena;
-		this.idRaspberry = idRaspi;
-		this.modoActivo = null;
-		this.modosInactivos = new ArrayList<String>();
-		this.estadoElectrovalvulas = new Boolean[32];
-		this.inicioRiegoManual = new Integer[32];
-		for(int j1 = 0; j1 < 32; j1 = j1 + 1){
-			this.estadoElectrovalvulas[j1] = null;
-			this.inicioRiegoManual[j1] = null;
-		}
+		this.controladores = new ArrayList<Controlador>();
 	}
 	public String getNombreUsuario(){
 		return this.nombreUsuario;
-	}
-	public String getIdRaspberry(){
-		return this.idRaspberry;
 	}
 	public synchronized String getContrasena(){
 		return this.contrasena;
@@ -35,28 +20,22 @@ public class Usuario_Concreto_General {
 	public synchronized void setContrasena(String nuevaContrasena){
 		this.contrasena = nuevaContrasena;
 	}
-	public synchronized String getModoActivo(){
-		return this.modoActivo;
+	public synchronized ArrayList<String> getControladoresSerializados(){
+		ArrayList<String> salida = new ArrayList<String>();
+		for(int j1 = 0; j1 < this.controladores.size(); j1 = j1 + 1){
+			salida.add(this.controladores.get(j1).getObjetoSerializado());
+		}
+		return salida;
 	}
-	public synchronized void setModoActivo(String nuevoModo){
-		this.modoActivo = nuevoModo;
+	public synchronized Controlador getControladorPorId(String id){
+		for(int j1 = 0; j1 < this.controladores.size(); j1 = j1 + 1){
+			if(this.controladores.get(j1).getIdRaspberry().equals(id)){
+				return this.controladores.get(j1);
+			}
+		}
+		return null;
 	}
-	public synchronized ArrayList<String> getModosInactivos(){
-		return this.modosInactivos;
-	}
-	public synchronized void setModosInactivos(ArrayList<String> nuevosModos){
-		this.modosInactivos = nuevosModos;
-	}
-	public synchronized Boolean[] getEstadoElectrovalvulas(){
-		return this.estadoElectrovalvulas;
-	}
-	public synchronized void setEstadoElectrovalvulas(Boolean[] nuevoEstado){
-		this.estadoElectrovalvulas = nuevoEstado;
-	}
-	public synchronized Integer[] getInicioManual(){
-		return this.inicioRiegoManual;
-	}
-	public synchronized void setInicioManual(Integer[] data){
-		this.inicioRiegoManual = data;
+	public synchronized void anadirControlador(Controlador nuevoControlador){
+		this.controladores.add(nuevoControlador);
 	}
 }
